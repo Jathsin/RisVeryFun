@@ -2,6 +2,7 @@
 n <- 10
 x <- 1:n
 
+#CHAPTER 5:Distributions
 
 # DISCHRETE
 # DISTRIBUTION + CUMULATIVE
@@ -49,17 +50,16 @@ hist(data,
 p <- punif(5, min=0, max=15)
 
 
-# NORMAL
-
+# NORMAL (do not correct by continuity in R!)
 
 x <- 5
 p <- pnorm(x, mean = 6, sd = 1.5) # Probability that X is less than x
-
 p_normal_greater <- function(a, mean, std) {
   prob <- 1 - pnorm(a - 1, mean = mean, sd = std)
   # cat("P[X >= ", a, "] =", prob, "\n")
 }
 a <- p_normal_greater(450, 400-0.5, 20)
+
 
 
 # Probability that X is greater equal than a
@@ -70,3 +70,6 @@ p <- p_poison_greater(450, 400)
 
 
 
+#CHAPTER 6: Statistical Inference 
+
+  
