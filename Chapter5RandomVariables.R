@@ -1,14 +1,14 @@
 # ===================== DISCRETE VARIABLE ==============================
-# DISTRIBUTION + CUMULATIVE
-# ====== Normal ======
 
 # ====== Uniform ======
-# Dist Func
-uniformDistFunc <- function(k){
+
+# Probability function
+pUniform <- function(k){  # k := number of elements in sample space -> equally probable
   sol <- 1/k
   sol
 }
-# Mean and Variance
+
+# Estimators
 uniMean <- function(xi, k){
   sol <- sum(xi*(1/k))
   sol
@@ -18,9 +18,16 @@ uniVar <- function(mean, k, xi){
   sol
 }
 
-# ====== Bernoulli ======
-# p+q = 1
-# Mean and Variance
+# ====== Bernoulli (p+q = 1) ====== 
+
+pBernoulli <- function(x, p) {
+  if (x == 1) {
+    p
+  } else {
+    1-p
+  }
+}
+
 bernMean <- function(p){
   p
 }
@@ -31,23 +38,41 @@ bernVar <- function(p){
 }
 
 # ====== Binomial ======
-#dbinom(x, n(totalSize), p(probability of each outcome))
-P <- dbinom(x,n, 0.5) # x can be either a vector or a number
 
-# Cumulative
-# probability of obtaining 4 our fewer heads, these are equivalent
-p_four_fewer_heads <- sum(dbinom(c(1,2,3,4), n, p_heads))
-p_four_fewer_heads_2 <- pbinom(4,10,0.7,lower.tail=TRUE, log.p=FALSE) #prefer this one
+# P(X = x)  dbinom(x, n := number of experiments, p := probability success)
+pBinomial <- function(x,n,p) {
+  dbinom(x,n, p) # x can be either a vector or a number
+}
+
+# P(X <= x) pbinom(x, n, p, lower.tail := X <= x ?, log.p := return probability in log form?) 
+# lower.tail = FALSE <-> P(X > x)
+dBinomial <- function(x,n,p,lowerTail,logP){
+  pbinom(x,n,p,lowerTail,logP) 
+}
 
 
-# ====== Geometric ======
-# probab Func
-geoProbFunc <- function(k, p){
+# Alternative
+dBinomial2 <- function(vector, n, p){
+  sum(dbinom(vector, n, p))
+}
+
+
+# ====== Geometric :=  independent Bernoulli trials ======
+
+# P(X = x)
+pGeometric <- function(k, p){ # k:= number of trials, p := probability of success
   q <- 1-p
   sol <- q^(k-1)*p
   sol
 }
-# Mean and Variance
+
+# P(X <= x)
+dGeometric <- function(vector, p) {
+  ps <- pGeometric(vector, p)
+  sum(ps)
+}
+
+# Estimators
 geoMean <- function(p){
   sol <- 1/p
   sol
@@ -58,55 +83,88 @@ geoVar <- function(p){
 }
 
 # ====== Poisson ======
-success <- 5
-lambda <- 4 # mean
-P <- dpois(success, 4)
+# P(X = x)
+pPoisson <- function(num_successes, lambda) {
+  dpois(num_successes, lambda)
+}
 
-#Cumulative
-P <- ppois(1,4)
-# Mean = lambda, Variance = lambda
-
-# ====== Interpolation ====== Use proportionality between triangles
-
+dPoisson <- function(vector, lambda) {
+  sum(dpois(vector, lambda))
+}
 
 
-# Generate random vectors following X distribution
-data <- rpois(10000,100)
 
-hist(data,
-     main = "Histogram of Poisson(λ=4) Samples",
-     xlab = "x",
-     col = "skyblue",
-     border = "white")
+# mean = var = lambda
 
+  
 
 # ===================== CONTINUOUS VARIABLE ==============================
+
+#NOTE: no need to interpolate! Also, P(X = x) does not make sense with continuous variables
+#                                    therefore we will use f(x) to refer to probability densities
+
+# pnorm, ppois... are all left gives left side
+
 # ====== Uniform ======
-# cumulative of uniform
-p <- punif(5, min=0, max=15)
+# P(X <= x)
+pUnif <- function(x, a, b) {
+  x*1/(b-a);
+}
+
+dUnif <- function(x, a, b) {
+  punif(x, min=a, max=b)
+}
+
+uniMeanCont <- function(a,b) {
+  (a+b)/2
+} 
+
+uniVarCont <- function(a,b) {
+  (b-a)^2/12
+}
+ 
 
 # ====== Normal ======
-# (do not correct by continuity in R!)
+# NOTE: do not correct by continuity in R!
 
-x <- 5
-p <- pnorm(x, mean = 6, sd = 1.5) # Probability that X is less than x
-
-p_normal_greater <- function(a, mean, std) {
-  prob <- 1 - pnorm(a - 1, mean = mean, sd = std)
-  # cat("P[X >= ", a, "] =", prob, "\n")
+# f(x)
+fNormal <- function(x, mean, std) {
+  p <- dnorm(x, mean, std) 
+  cat("f(",a,") =", p, "\n")
+  p
 }
-a <- p_normal_greater(450, 400-0.5, 20)
-
-
-# Probability that X is greater equal than a
-p_poison_greater<- function(a,lambda) {
-  p <- 1 - ppois(a-1, lambda, lower.tail = TRUE)
+  
+# P( X >= x)
+dNormal <- function(a, mean, std) { 
+  p <- 1 - pnorm(a - 1, mean = mean, sd = std)
+  cat("P[X >=",a, "] =", p, "\n")
+  p
 }
-p <- p_poison_greater(450, 400)
+#dNormal(450, 400-0.5, 20)
+
+
+
+# ====== Poisson ======
+
+# lowerTail = TRUE <-> P(X <= x), else P(X > x)
+# lowerTail = TRUE, logP = FALSE by default
+dPoisson <- function(x, lambda, lowerTail, logP) {
+  ppois(x, lambda, lowerTail, logP)
+}
 
 
 # ====== Chi-Squared ======
-qchisq(p, df) # p <- percentile and df <- degrees of freedom
+
+# P(X <= q)
+dChi2 <- function(p, df, lowerTAIL) { # p <- percentile and df <- degrees of freedom
+  pchisq(p, df, lowerTAIL)
+}
+
+ 
+# What is the value q such that P(X <= q) = p
+get_chi2 <- function(p, df) {
+  qchisq(p, df)
+}
 
 
 # ====== Student-T ======
