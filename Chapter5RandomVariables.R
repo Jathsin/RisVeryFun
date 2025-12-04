@@ -130,7 +130,7 @@ uniVarCont <- function(a,b) {
 # f(x)
 fNormal <- function(x, mean, std) {
   p <- dnorm(x, mean, std) 
-  cat("f(",a,") =", p, "\n")
+  cat("f(",x,") =", p, "\n")
   p
 }
   
