@@ -43,6 +43,7 @@ bernVar <- function(p){
 # ====== Binomial ======
 
 # P(X = x)  dbinom(x, n := number of experiments, p := probability success)
+#Used to see the success probability, a fixed number of attempts, count on successes
 pBinomial <- function(x,n,p) {
   dbinom(x,n, p) # x can be either a vector or a number
 }
@@ -61,6 +62,7 @@ dBinomial2 <- function(vector, n, p){
 
 
 # ====== Geometric :=  independent Bernoulli trials ======
+#Number of attepmts until you get the first success
 
 # P(X = x)
 pGeometric <- function(k, p){ # k:= number of trials, p := probability of success
@@ -86,6 +88,7 @@ geoVar <- function(p){
 }
 
 # ====== Poisson ======
+#Ratio, for example, telephone exchange per minute (lambda = 400)
 # P(X = x)
 pPoisson <- function(num_successes, lambda) {
   dpois(num_successes, lambda)
@@ -157,7 +160,8 @@ dPoisson <- function(x, lambda, lowerTail, logP) {
 
 
 # ====== Chi-Squared ======
-
+#Does it follow x distribution
+#Also used for independency or interaction
 # P(X <= q)
 dChi2 <- function(p, df, lowerTAIL) { # p <- percentile and df <- degrees of freedom
   pchisq(p, df, lowerTAIL)
