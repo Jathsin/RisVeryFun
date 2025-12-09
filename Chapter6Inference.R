@@ -591,7 +591,7 @@ test_diff_means <- function(m1, m2, n1, n2, v1=NULL, v2=NULL, s1=NULL, s2=NULL,
 
 
 # ------------------------------------------------------------------------------
-# 5. TEST FOR RATIO OF VARIANCES (Sigma1^2 / Sigma2^2)
+# 5. TEST FOR EQUALITY OF VARIANCES (Sigma1^2 / Sigma2^2) OF NORMAL DISTRIBUTIONS
 # ------------------------------------------------------------------------------
 
 #' Hypothesis Test for Equality of Variances
@@ -640,7 +640,7 @@ test_ratio_variances <- function(s1_sq, s2_sq, n1, n2, type="two.sided", alpha=0
 
 
 # ------------------------------------------------------------------------------
-# 6. TEST FOR DIFFERENCE OF PROPORTIONS (p1 = p2)
+# 6. TEST FOR EQUALITY OF PROPORTIONS (p1 = p2)
 # ------------------------------------------------------------------------------
 
 #' Hypothesis Test for Difference of Proportions
@@ -697,11 +697,11 @@ test_diff_proportions <- function(p1, p2, n1, n2, type="two.sided", alpha=0.05) 
 #' 
 #' @param observed Vector of observed frequencies (O_i)
 #' @param probs Vector of expected probabilities (p_i)
-#' @param m Number of estimated parameters (e.g. if you estimated mean, m=1)
+#' @param m Number of estimated parameters (e.g. if you estimated mean, m=1) 
 test_goodness_of_fit <- function(observed, probs, m=0, alpha=0.05) {
   
   n <- sum(observed)
-  expected <- n * probs 
+  expected <- n * probs # (e_i)
   
   # Check condition: Expected frequencies >= 5 [cite: 950]
   if (any(expected < 5)) {
