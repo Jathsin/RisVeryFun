@@ -279,7 +279,7 @@ ci_iff_proportions <- function(p1, p2, n1, n2, conf = 0.95) {
 print_decision <- function(p_value, alpha) {
   cat(sprintf("   P-Value: %.5f\n", p_value))
   cat(sprintf("   Alpha:   %.2f\n", alpha))
-  if(p_value < alpha) {
+  if(p_value <= alpha) {
     cat("   RESULT: REJECT Null Hypothesis (H0)\n")
     cat("   (There is significant evidence for the alternative)\n")
   } else {
