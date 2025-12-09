@@ -1,5 +1,8 @@
 # ===================== DISCRETE VARIABLE ==============================
 
+# TO ADD: corrections by continuity
+
+
 # ====== Uniform ======
 
 # Probability function
@@ -136,7 +139,7 @@ fNormal <- function(x, mean, std) {
   
 # P( X >= x)
 dNormal <- function(a, mean, std) { 
-  p <- 1 - pnorm(a - 1, mean = mean, sd = std)
+  p <- 1 - pnorm(a, mean = mean, sd = std)
   cat("P[X >=",a, "] =", p, "\n")
   p
 }
