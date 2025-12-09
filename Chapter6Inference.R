@@ -287,6 +287,58 @@ print_decision <- function(p_value, alpha) {
   }
 }
 
+#' HELPER FUNCTION: Universal P-Value Calculator
+#' Calculates the p-value for any distribution based on the test type.
+#' 
+#' @param stat The calculated test statistic
+#' @param dist The distribution name: "norm", "t", "chisq", or "f"
+#' @param type The hypothesis type: "less", "greater", "two.sided"
+#' @param df1 Degrees of freedom 1 (for t, chisq, f)
+#' @param df2 Degrees of freedom 2 (only for f)
+get_p_value <- function(stat, dist, type, df1=NULL, df2=NULL) {
+  
+  p_val <- 0
+  
+  # --- NORMAL DISTRIBUTION (Z) ---
+  if (dist == "norm") {
+    if (type == "less")      p_val <- pnorm(stat)
+    if (type == "greater")   p_val <- 1 - pnorm(stat)
+    if (type == "two.sided") p_val <- 2 * (1 - pnorm(abs(stat)))
+  }
+  
+  # --- T-STUDENT DISTRIBUTION (t) ---
+  else if (dist == "t") {
+    if (type == "less")      p_val <- pt(stat, df1)
+    if (type == "greater")   p_val <- 1 - pt(stat, df1)
+    if (type == "two.sided") p_val <- 2 * (1 - pt(abs(stat), df1))
+  }
+  
+  # --- CHI-SQUARE DISTRIBUTION (Variance Test) ---
+  # Note: Chi-sq is asymmetric. Two-sided is 2 * min(tail).
+  else if (dist == "chisq") {
+    if (type == "less")      p_val <- pchisq(stat, df1)
+    if (type == "greater")   p_val <- 1 - pchisq(stat, df1)
+    if (type == "two.sided") {
+      left <- pchisq(stat, df1)
+      right <- 1 - pchisq(stat, df1)
+      p_val <- 2 * min(left, right)
+    }
+  }
+  
+  # --- F-DISTRIBUTION (Ratio Variances) ---
+  else if (dist == "f") {
+    if (type == "less")      p_val <- pf(stat, df1, df2)
+    if (type == "greater")   p_val <- 1 - pf(stat, df1, df2)
+    if (type == "two.sided") {
+      left <- pf(stat, df1, df2)
+      right <- 1 - pf(stat, df1, df2)
+      p_val <- 2 * min(left, right)
+    }
+  }
+  
+  return(p_val)
+}
+
 # ------------------------------------------------------------------------------
 # 1. TEST FOR MEAN (Mu0) OF A NORMAL POPULATION
 # ------------------------------------------------------------------------------
@@ -326,6 +378,9 @@ test_mean <- function(x_bar, mu0, n, sigma=NULL, s=NULL, type="two.sided", alpha
   } else {
     stop("Error: Provide either sigma (known) or s (unknown).")
   }
+  
+  # 2. Get P-Value using our new function
+  p_val <- get_p_value(stat, dist_type, type, df1=df)
   
   # --- STEP 2: DETERMINE REJECTION REGION & DECISION ---
   
@@ -405,6 +460,9 @@ test_variance <- function(s2, sigma0_sq, n, type="two.sided", alpha=0.05) {
   stat <- ((n - 1) * s2) / sigma0_sq
   df <- n - 1
   
+  ## 2. Get P-Value
+  p_val <- get_p_value(stat, "chisq", type, df1=df)
+  cat(sprintf("P-Value:        %.5f\n", p_val))
   # --- STEP 2: CHECK REJECTION REGION ---
   
   reject_null <- FALSE
@@ -454,6 +512,9 @@ test_proportion <- function(p_hat, p0, n, type="two.sided", alpha=0.05) {
   se <- sqrt( (p0 * (1 - p0)) / n )
   stat <- (p_hat - p0) / se
   
+  # 2. Get P-Value
+  p_val <- get_p_value(stat, "norm", type)
+  cat(sprintf("P-Value:        %.5f\n", p_val))
   # --- STEP 2: CHECK REJECTION REGION ---
   
   reject_null <- FALSE
@@ -542,6 +603,9 @@ test_diff_means <- function(m1, m2, n1, n2, v1=NULL, v2=NULL, s1=NULL, s2=NULL,
     cat(sprintf("Welch Degrees of Freedom: %.2f\n", df))
   }
   
+  # 2. Get P-Value
+  p_val <- get_p_value(stat, dist_type, type, df1=df)
+  cat(sprintf("P-Value:        %.5f\n", p_val))
   # --- STEP 2: CHECK REJECTION REGION ---
   
   reject_null <- FALSE
@@ -607,6 +671,9 @@ test_ratio_variances <- function(s1_sq, s2_sq, n1, n2, type="two.sided", alpha=0
   
   cat(sprintf("Test Statistic (F): %.4f\n", stat))
   
+  # 2. Get P-Value
+  p_val <- get_p_value(stat, "f", type, df1=df1, df2=df2)
+  cat(sprintf("P-Value:        %.5f\n", p_val))
   # --- STEP 2: CHECK REJECTION REGION ---
   
   reject_null <- FALSE
@@ -654,6 +721,9 @@ test_diff_proportions <- function(p1, p2, n1, n2, type="two.sided", alpha=0.05) 
   den <- sqrt( (p1*(1-p1)/n1) + (p2*(1-p2)/n2) )
   stat <- num / den
   
+  # 2. Get P-Value
+  p_val <- get_p_value(stat, "norm", type)
+  cat(sprintf("P-Value:        %.5f\n", p_val))
   # --- STEP 2: CHECK REJECTION REGION ---
   
   reject_null <- FALSE
