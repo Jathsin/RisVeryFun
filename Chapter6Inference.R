@@ -889,7 +889,8 @@ test_goodness_of_fit <- function(observed, probs, m=0, alpha=0.05) {
 # ------------------------------------------------------------------------------
 
 #' Chi-Square Test of Independence
-#' 
+#' IF H0 ACCEPTED = INDEPENDENT
+#' IF H0 REJECTED = DEPENDENT
 #' @param matrix_obs A matrix of observed frequencies (O_ij)
 test_independence <- function(matrix_obs, alpha=0.05) {
   
