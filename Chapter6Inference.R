@@ -27,8 +27,158 @@ normalise <- function(p) {
   }
 }
 
+#CHAPTER 6: Statistical Inference
 
-#CHAPTER 6: Statistical Inference 
+# ------------------------------------------------------------------------------
+# SECTION 0.1  BASIC CONCEPTS & POINT ESTIMATION (Slides 7 - 12)
+# ------------------------------------------------------------------------------
+
+#' Calculate Sample Mean (Slide 7)
+#' Estimator for population mean (mu).
+#' @param x A numeric vector of data (sample).
+#' @return The arithmetic mean.
+get_sample_mean <- function(x) {
+  # Formula: Sum(xi) / n
+  return(mean(x))
+}
+
+#' Calculate Sample Quasi-Variance (S^2) (Slide 7)
+#' Unbiased estimator for population variance (sigma^2).
+#' IMPORTANT: This divides by (n-1), not n.
+#' @param x A numeric vector of data.
+#' @return The sample quasi-variance.
+get_sample_quasivariance <- function(x) {
+  # Formula: Sum(xi - x_bar)^2 / (n - 1)
+  # R's var() function calculates quasi-variance by default.
+  return(var(x))
+}
+
+#' Calculate Population Variance (sigma^2) (Slide 7)
+#' Used when 'x' is the entire population, not a sample.
+#' IMPORTANT: This divides by N.
+#' @param x A numeric vector representing the entire population.
+#' @return The population variance.
+get_population_variance <- function(x) {
+  N <- length(x)
+  # Formula: Sum(xi - mu)^2 / N
+  return(sum((x - mean(x))^2) / N)
+}
+
+#' Calculate Sample Proportion (p_hat) (Slide 8)
+#' Estimator for population proportion (p).
+#' @param x A numeric vector of data.
+#' @param condition_fn A function that returns TRUE for the characteristic of interest.
+#' @return The proportion of elements satisfying the condition.
+#' @example get_sample_proportion(c(1, 2, 5, 6), function(x) x > 4)
+get_sample_proportion <- function(x, condition_fn) {
+  # n_A: Number of elements satisfying condition A
+  n_A <- sum(condition_fn(x))
+  n <- length(x)
+  # Formula: n_A / n
+  return(n_A / n)
+}
+
+# ------------------------------------------------------------------------------
+# SECTION 0.2: SAMPLING DISTRIBUTIONS (Slides 13 - 18)
+# These functions calculate probabilities for sample statistics.
+# ------------------------------------------------------------------------------
+
+# --- 2.1 Distribution of the Sample Mean (Slide 13-14) ---
+
+#' Probability for Sample Mean (Known Variance) (Slide 13)
+#' Calculates P(X_bar <= value) or P(X_bar > value) assuming Normal distribution.
+#' @param target_value The value of x_bar we are checking against.
+#' @param mu Population mean.
+#' @param sigma Population standard deviation (known).
+#' @param n Sample size.
+#' @param N Population size (optional, for finite population correction - Slide 14).
+#' @param lower.tail Logical; if TRUE (default), probs are P(X <= x), else P(X > x).
+prob_sample_mean_known_var <- function(target_value, mu, sigma, n, N = NULL, lower.tail = TRUE) {
+  
+  # Calculate Standard Error (sigma_x_bar)
+  std_error <- sigma / sqrt(n)
+  
+  # Apply Finite Population Correction if N is provided (Slide 14)
+  if (!is.null(N)) {
+    fpc <- sqrt((N - n) / (N - 1))
+    std_error <- std_error * fpc
+  }
+  
+  # Calculate Z-score and Probability
+  # Distribution: X_bar ~ N(mu, std_error)
+  prob <- pnorm(target_value, mean = mu, sd = std_error, lower.tail = lower.tail)
+  return(prob)
+}
+
+#' Probability for Sample Mean (Unknown Variance, Large n) (Slide 13)
+#' Uses sample standard deviation (s) as approximation for sigma.
+#' @param target_value The value of x_bar we are checking against.
+#' @param mu Population mean.
+#' @param s Sample standard deviation (quasi-std dev).
+#' @param n Sample size (should be >= 30).
+#' @param lower.tail Logical; if TRUE (default), probs are P(X <= x).
+prob_sample_mean_unknown_var_large_n <- function(target_value, mu, s, n, lower.tail = TRUE) {
+  # Approximation: X_bar ~ N(mu, s / sqrt(n))
+  std_error <- s / sqrt(n)
+  prob <- pnorm(target_value, mean = mu, sd = std_error, lower.tail = lower.tail)
+  return(prob)
+}
+
+#' Probability for Sample Mean (Unknown Variance, Small n) (Slide 13)
+#' Uses Student's t-distribution with n-1 degrees of freedom.
+#' @param target_value The value of x_bar we are checking against.
+#' @param mu Population mean.
+#' @param s Sample standard deviation (quasi-std dev).
+#' @param n Sample size (n < 30).
+#' @param lower.tail Logical; if TRUE (default), probs are P(X <= x).
+prob_sample_mean_t_dist <- function(target_value, mu, s, n, lower.tail = TRUE) {
+  # Statistic: T = (X_bar - mu) / (s / sqrt(n)) ~ t(n-1)
+  std_error <- s / sqrt(n)
+  t_score <- (target_value - mu) / std_error
+  
+  prob <- pt(t_score, df = n - 1, lower.tail = lower.tail)
+  return(prob)
+}
+
+
+# --- 2.2 Distribution of Sample Quasi-Variance (Slide 14) ---
+
+#' Probability for Sample Quasi-Variance (S^2)
+#' Uses Chi-Square distribution.
+#' Formula: (n-1)S^2 / sigma^2 ~ Chi_sq(n-1)
+#' @param target_s2 The value of S^2 we are checking against.
+#' @param sigma_sq Population variance.
+#' @param n Sample size.
+#' @param lower.tail Logical; if TRUE, P(S^2 <= val), else P(S^2 > val).
+prob_sample_variance <- function(target_s2, sigma_sq, n, lower.tail = TRUE) {
+  # Transform S^2 into Chi-Square statistic
+  chi_stat <- ((n - 1) * target_s2) / sigma_sq
+  
+  # Calculate probability using Chi-Square with n-1 df
+  prob <- pchisq(chi_stat, df = n - 1, lower.tail = lower.tail)
+  return(prob)
+}
+
+
+# --- 2.3 Distribution of Sample Proportion (Slide 14) ---
+
+#' Probability for Sample Proportion (p_hat)
+#' Assumes large n (Normal approximation).
+#' Distribution: p_hat ~ N(p, sqrt(p(1-p)/n))
+#' @param target_p_hat The sample proportion value to check.
+#' @param p Population proportion (true proportion).
+#' @param n Sample size.
+#' @param lower.tail Logical; if TRUE, P(p_hat <= val).
+prob_sample_proportion <- function(target_p_hat, p, n, lower.tail = TRUE) {
+  # Standard Error for proportion
+  std_error <- sqrt((p * (1 - p)) / n)
+  
+  prob <- pnorm(target_p_hat, mean = p, sd = std_error, lower.tail = lower.tail)
+  return(prob)
+}
+
+
+ 
 
 # ------------------------------------------------------------------------------
 # SECTION 1: 
