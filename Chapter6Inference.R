@@ -759,6 +759,90 @@ test_diff_proportions <- function(p1, p2, n1, n2, type="two.sided", alpha=0.05) 
 # Based on PDF Pages 67 - 73
 # ==============================================================================
 
+# TO FIT ANY DISTRIBUTION (PLEASE READ)
+#' Helper: Fit Distribution & Get Probabilities
+#' Calculates expected probabilities for Poisson, Binomial, or Normal distributions.
+#' 
+#' @param dist Type of distribution: "poisson", "binomial", or "normal"
+#' @param observed Vector of observed frequencies
+#' @param x_vals (For Poisson/Binomial) Vector of discrete values (e.g., 0, 1, 2...)
+#' @param breaks (For Normal) Vector of interval boundaries (e.g., c(0, 10, 20...))
+#' @param n_trials (For Binomial) Total number of trials N
+#' @return A vector of probabilities summing to 1
+fit_probs <- function(dist, observed, x_vals=NULL, breaks=NULL, n_trials=NULL) {
+  
+  n <- sum(observed)
+  probs <- c()
+  m <- 0 # Number of estimated parameters
+  
+  # --- CASE 1: POISSON DISTRIBUTION ---
+  # Estimates Lambda (mean)
+  if (dist == "poisson") {
+    if (is.null(x_vals)) stop("Error: 'poisson' requires 'x_vals'.")
+    
+    # Estimate Lambda [cite: 900]
+    lambda <- sum(x_vals * observed) / n
+    m <- 1
+    cat(sprintf("Fitted Poisson: Lambda = %.4f (m=1)\n", lambda))
+    
+    # Calculate probs for all specific values except the last "tail"
+    exact_vals <- x_vals[1:(length(x_vals) - 1)]
+    probs <- dpois(exact_vals, lambda)
+    # The last bin gets the remainder (1 - sum)
+    probs <- c(probs, 1 - sum(probs))
+  }
+  
+  # --- CASE 2: BINOMIAL DISTRIBUTION ---
+  # Estimates p (proportion)
+  else if (dist == "binomial") {
+    if (is.null(x_vals) || is.null(n_trials)) stop("Error: 'binomial' requires 'x_vals' and 'n_trials'.")
+    
+    # Estimate p: Mean = n*p -> p = Mean / n [cite: 901]
+    mean_val <- sum(x_vals * observed) / n
+    p_hat <- mean_val / n_trials
+    m <- 1
+    cat(sprintf("Fitted Binomial: p = %.4f (m=1)\n", p_hat))
+    
+    # Calculate probs
+    probs <- dbinom(x_vals, size = n_trials, prob = p_hat)
+    
+    # Normalize if necessary (if x_vals covers full range 0..n, sum is 1. If grouped, handle tail)
+    if(abs(sum(probs) - 1) > 0.001) {
+      probs[length(probs)] <- 1 - sum(probs[-length(probs)])
+    }
+  }
+  
+  # --- CASE 3: NORMAL DISTRIBUTION ---
+  # Estimates Mu (mean) and S (standard deviation) from grouped data
+  else if (dist == "normal") {
+    if (is.null(breaks)) stop("Error: 'normal' requires 'breaks' (interval boundaries).")
+    
+    # Calculate midpoints (class marks)
+    mids <- (breaks[-length(breaks)] + breaks[-1]) / 2
+    
+    # Estimate Mean (Mu) [cite: 902]
+    mu <- sum(mids * observed) / n
+    
+    # Estimate Quasi-Standard Deviation (S) [cite: 902]
+    var_s <- sum((mids - mu)^2 * observed) / (n - 1)
+    s <- sqrt(var_s)
+    m <- 2
+    cat(sprintf("Fitted Normal: Mu = %.4f, S = %.4f (m=2)\n", mu, s))
+    
+    # Calculate Z-scores for boundaries
+    # To ensure sum=1, we treat the first lower bound as -Infinity and last upper as +Infinity
+    cum_probs <- pnorm(breaks, mean = mu, sd = s)
+    cum_probs[1] <- 0 
+    cum_probs[length(cum_probs)] <- 1
+    
+    # Prob of interval = P(upper) - P(lower)
+    probs <- diff(cum_probs)
+  }
+  
+  cat("NOTE: Use the 'm' value printed above in the test_goodness_of_fit function.\n")
+  return(probs)
+}
+
 # ------------------------------------------------------------------------------
 # 1. GOODNESS OF FIT
 # ------------------------------------------------------------------------------
