@@ -253,7 +253,7 @@ ci_ratio_variances <- function(s1_sq, s2_sq, n1, n2, conf = 0.95) {
 #' CI Difference of Proportions (p1 - p2) 
 #' Notes: 2 binomial distributions
 #' Requirements: big samples n1 + n2 > 30 && n1 ≈ n2.
-ci_iff_proportions <- function(p1, p2, n1, n2, conf = 0.95) {
+ci_diff_proportions <- function(p1, p2, n1, n2, conf = 0.95) {
   alpha <- 1 - conf
   z <- qnorm(1 - alpha/2)
   
@@ -841,4 +841,59 @@ test_independence <- function(matrix_obs, alpha=0.05) {
   }
 }
 
+
+# ==============================================================================
+# PART 4: SAMPLE SIZE CALCULATION (Finding n)
+# ==============================================================================
+
+#' 1. Sample Size for Single Mean
+#' Formula: n = (Z * sigma / E)^2
+#' @param sigma Population standard deviation (or estimate s)
+#' @param E Desired Margin of Error
+#' @param conf Confidence Level
+n_for_mean <- function(sigma, E, conf = 0.95) {
+  alpha <- 1 - conf
+  z <- qnorm(1 - alpha/2)
+  n <- (z * sigma / E)^2
+  cat(sprintf("Required Sample Size: %d\n", ceiling(n)))
+  return(ceiling(n))
+}
+
+#' 2. Sample Size for Single Proportion
+#' Formula: n = p(1-p) * (Z/E)^2
+#' @param E Desired Margin of Error (e.g., 0.03)
+#' @param p Estimated proportion (default 0.5 for max sample size)
+n_for_proportion <- function(E, p = 0.5, conf = 0.95) {
+  alpha <- 1 - conf
+  z <- qnorm(1 - alpha/2)
+  n <- p * (1 - p) * (z / E)^2
+  cat(sprintf("Required Sample Size: %d\n", ceiling(n)))
+  return(ceiling(n))
+}
+
+#' 3. Sample Size for Difference of Means (n1 = n2)
+#' Formula: n = (Z/E)^2 * (sigma1^2 + sigma2^2)
+#' @param s1 Standard Deviation Group 1
+#' @param s2 Standard Deviation Group 2
+#' @param E Desired Margin of Error for the difference
+n_for_diff_means <- function(s1, s2, E, conf = 0.95) {
+  alpha <- 1 - conf
+  z <- qnorm(1 - alpha/2)
+  n <- (z / E)^2 * (s1^2 + s2^2)
+  cat(sprintf("Required Sample Size (per group): %d\n", ceiling(n)))
+  return(ceiling(n))
+}
+
+#' 4. Sample Size for Difference of Proportions (n1 = n2)
+#' Formula: n = (Z/E)^2 * (p1(1-p1) + p2(1-p2))
+#' @param p1 Estimated Proportion Group 1
+#' @param p2 Estimated Proportion Group 2
+#' @param E Desired Margin of Error for the difference
+n_for_diff_proportions <- function(p1, p2, E, conf = 0.95) {
+  alpha <- 1 - conf
+  z <- qnorm(1 - alpha/2)
+  n <- (z / E)^2 * (p1 * (1 - p1) + p2 * (1 - p2))
+  cat(sprintf("Required Sample Size (per group): %d\n", ceiling(n)))
+  return(ceiling(n))
+}
 
